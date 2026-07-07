@@ -389,6 +389,7 @@ const btnRight = document.getElementById('btn-right');
 const btnJump = document.getElementById('btn-jump');
 
 function setupTouchEvents() {
+  // --- 1. 画面下部ボタンでの操作 ---
   btnLeft.addEventListener('touchstart', (e) => { e.preventDefault(); touchDir = 'left'; });
   btnLeft.addEventListener('touchend', (e) => { e.preventDefault(); if (touchDir === 'left') touchDir = null; });
   btnLeft.addEventListener('mousedown', () => { touchDir = 'left'; });
@@ -403,6 +404,69 @@ function setupTouchEvents() {
   btnJump.addEventListener('touchend', (e) => { e.preventDefault(); if (touchDir === 'jump') touchDir = null; });
   btnJump.addEventListener('mousedown', () => { touchDir = 'jump'; });
   btnJump.addEventListener('mouseup', () => { if (touchDir === 'jump') touchDir = null; });
+
+  // --- 2. Canvas直接タッチでのジェスチャー操作 ---
+  let touchStartX = 0;
+  let touchStartY = 0;
+  let touchStartTime = 0;
+  let isSwiping = false; // スワイプ操作が行われたかのフラグ
+
+  canvas.addEventListener('touchstart', (e) => {
+    e.preventDefault();
+    if (!gameState.isPlaying || gameState.isGameOver) return;
+
+    const touch = e.touches[0];
+    touchStartX = touch.clientX;
+    touchStartY = touch.clientY;
+    touchStartTime = Date.now();
+    isSwiping = false;
+    touchDir = null; // 開始時は移動をクリア
+  }, { passive: false });
+
+  canvas.addEventListener('touchmove', (e) => {
+    e.preventDefault();
+    if (!gameState.isPlaying || gameState.isGameOver) return;
+
+    const touch = e.touches[0];
+    const dx = touch.clientX - touchStartX;
+    
+    // スワイプと判定するしきい値 (15px)
+    const threshold = 15;
+
+    if (Math.abs(dx) > threshold) {
+      isSwiping = true;
+      if (dx > 0) {
+        touchDir = 'right';
+      } else {
+        touchDir = 'left';
+      }
+    } else {
+      // 指をタッチ開始位置付近に戻した場合は移動を止める
+      touchDir = null;
+    }
+  }, { passive: false });
+
+  canvas.addEventListener('touchend', (e) => {
+    e.preventDefault();
+    if (!gameState.isPlaying || gameState.isGameOver) return;
+
+    const touchDuration = Date.now() - touchStartTime;
+
+    // スワイプされておらず、かつ短いタッチ（200ms未満）であれば「ジャンプ」と判定
+    if (!isSwiping && touchDuration < 200) {
+      touchDir = 'jump';
+      setTimeout(() => {
+        if (touchDir === 'jump') touchDir = null;
+      }, 50);
+    } else {
+      touchDir = null;
+    }
+  }, { passive: false });
+
+  canvas.addEventListener('touchcancel', (e) => {
+    e.preventDefault();
+    touchDir = null;
+  });
 }
 
 // --- 当たり判定（衝突判定） ---
