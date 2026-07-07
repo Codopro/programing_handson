@@ -12,12 +12,12 @@ const config = {
 // ゲームの変数（ブロックから読み込まれるパラメータ）
 let gameParams = {
   playerSpeed: 3,
-  playerJump: 0,
   playerMaxLife: 1,
   tntSpeed: 6,
   tntFrequency: 'high', // 'high', 'normal', 'low'
   diamondScore: 5,
-  specialEffect: 'none' // 'none', 'shield', 'speedup'
+  goldScore: 1,
+  specialEffect: 'none' // 'none', 'shield', 'speedup', 'heal', 'clearTnt'
 };
 
 // 実行中のゲーム内状態
@@ -56,8 +56,6 @@ class Agent {
     this.x = config.width / 2 - this.width / 2;
     this.y = config.height - this.height - 10;
     this.vx = 0;
-    this.vy = 0;
-    this.isGrounded = true;
     this.dir = 1; // 1: 右, -1: 左
     this.animFrame = 0;
   }
@@ -84,8 +82,7 @@ class Agent {
       friction = 0.70 + (gameParams.playerSpeed - 5) * 0.05; // スピード10のときに friction = 0.95 (超ツルツル滑る)
     }
 
-    // 空中では制御能力（左右移動の加速度）が大幅に低下する (地上の約1/4)
-    let accel = this.isGrounded ? 1.2 : 0.3;
+    let accel = 1.2; // 常に地上
 
     // 移動入力処理 (キーボード ＆ タッチ)
     if (keys['ArrowLeft'] || touchDir === 'left') {
@@ -105,22 +102,8 @@ class Agent {
     if (this.vx > targetSpeed) this.vx = targetSpeed;
     if (this.vx < -targetSpeed) this.vx = -targetSpeed;
 
-    // ジャンプ処理 (ジャンプ力が0より大きい場合のみ有効)
-    if (gameParams.playerJump > 0) {
-      if ((keys['Space'] || keys[' '] || touchDir === 'jump') && this.isGrounded) {
-        this.vy = -gameParams.playerJump;
-        this.isGrounded = false;
-        // ジャンプ時の土煙
-        for (let i = 0; i < 5; i++) {
-          createParticle(this.x + this.width / 2, this.y + this.height, '#8d6e63', (Math.random() - 0.5) * 3, -Math.random() * 2);
-        }
-      }
-    }
-
-    // 物理演算 (重力と床の判定)
+    // 移動物理演算
     this.x += this.vx;
-    this.y += this.vy;
-    this.vy += config.gravity;
 
     // 画面外にいかないように制限
     if (this.x < 0) {
@@ -132,12 +115,8 @@ class Agent {
       this.vx = 0;
     }
 
-    const floorY = config.height - this.height - 10;
-    if (this.y >= floorY) {
-      this.y = floorY;
-      this.vy = 0;
-      this.isGrounded = true;
-    }
+    // Y座標はライフのサイズ変更に合わせて常に床に固定
+    this.y = config.height - this.height - 10;
   }
 
   draw() {
@@ -228,7 +207,8 @@ class FallingObject {
       // 得点が高くなるほど、ダイヤが重くなり落下が加速する
       this.speed = 3 + (gameParams.diamondScore * 0.09); // 得点100のとき秒速12ピクセル（超高速）
     } else {
-      this.speed = 3 + Math.random() * 2;
+      // 金鉱石も得点が高くなるほど、重くなり落下が加速する
+      this.speed = 3 + (gameParams.goldScore * 0.09);
     }
   }
 
@@ -386,7 +366,6 @@ window.addEventListener('keyup', (e) => {
 // モバイルタッチボタンイベント
 const btnLeft = document.getElementById('btn-left');
 const btnRight = document.getElementById('btn-right');
-const btnJump = document.getElementById('btn-jump');
 
 function setupTouchEvents() {
   // --- 1. 画面下部ボタンでの操作 ---
@@ -400,67 +379,32 @@ function setupTouchEvents() {
   btnRight.addEventListener('mousedown', () => { touchDir = 'right'; });
   btnRight.addEventListener('mouseup', () => { if (touchDir === 'right') touchDir = null; });
 
-  btnJump.addEventListener('touchstart', (e) => { e.preventDefault(); touchDir = 'jump'; });
-  btnJump.addEventListener('touchend', (e) => { e.preventDefault(); if (touchDir === 'jump') touchDir = null; });
-  btnJump.addEventListener('mousedown', () => { touchDir = 'jump'; });
-  btnJump.addEventListener('mouseup', () => { if (touchDir === 'jump') touchDir = null; });
-
-  // --- 2. Canvas直接タッチでのジェスチャー操作 ---
-  let touchStartX = 0;
-  let touchStartY = 0;
-  let touchStartTime = 0;
-  let isSwiping = false; // スワイプ操作が行われたかのフラグ
-
-  canvas.addEventListener('touchstart', (e) => {
+  // --- 2. Canvas直接タッチでの端タップ操作 ---
+  function handleCanvasTouch(e) {
     e.preventDefault();
     if (!gameState.isPlaying || gameState.isGameOver) return;
 
     const touch = e.touches[0];
-    touchStartX = touch.clientX;
-    touchStartY = touch.clientY;
-    touchStartTime = Date.now();
-    isSwiping = false;
-    touchDir = null; // 開始時は移動をクリア
-  }, { passive: false });
+    const rect = canvas.getBoundingClientRect();
+    const touchX = touch.clientX - rect.left;
+    const relativeX = touchX / rect.width; // 0.0 〜 1.0
 
-  canvas.addEventListener('touchmove', (e) => {
-    e.preventDefault();
-    if (!gameState.isPlaying || gameState.isGameOver) return;
-
-    const touch = e.touches[0];
-    const dx = touch.clientX - touchStartX;
-    
-    // スワイプと判定するしきい値 (15px)
-    const threshold = 15;
-
-    if (Math.abs(dx) > threshold) {
-      isSwiping = true;
-      if (dx > 0) {
-        touchDir = 'right';
-      } else {
-        touchDir = 'left';
-      }
+    // 左右 35% エリアの判定
+    if (relativeX < 0.35) {
+      touchDir = 'left';
+    } else if (relativeX > 0.65) {
+      touchDir = 'right';
     } else {
-      // 指をタッチ開始位置付近に戻した場合は移動を止める
-      touchDir = null;
+      touchDir = null; // 中央 30% は不感帯
     }
-  }, { passive: false });
+  }
+
+  canvas.addEventListener('touchstart', handleCanvasTouch, { passive: false });
+  canvas.addEventListener('touchmove', handleCanvasTouch, { passive: false });
 
   canvas.addEventListener('touchend', (e) => {
     e.preventDefault();
-    if (!gameState.isPlaying || gameState.isGameOver) return;
-
-    const touchDuration = Date.now() - touchStartTime;
-
-    // スワイプされておらず、かつ短いタッチ（200ms未満）であれば「ジャンプ」と判定
-    if (!isSwiping && touchDuration < 200) {
-      touchDir = 'jump';
-      setTimeout(() => {
-        if (touchDir === 'jump') touchDir = null;
-      }, 50);
-    } else {
-      touchDir = null;
-    }
+    touchDir = null;
   }, { passive: false });
 
   canvas.addEventListener('touchcancel', (e) => {
@@ -560,8 +504,8 @@ function gameLoop() {
         }
         obj.reset();
       } else if (obj.type === 'gold') {
-        // 金鉱石獲得 (1点固定)
-        gameState.score += 1;
+        // 金鉱石獲得 (設定された得点を加算)
+        gameState.score += Number(gameParams.goldScore);
         scoreVal.textContent = gameState.score;
 
         // 獲得エフェクト
@@ -594,6 +538,26 @@ function applySpecialEffect() {
     for (let i = 0; i < 15; i++) {
       createParticle(player.x + player.width/2, player.y + player.height/2, '#00e5ff', (Math.random() - 0.5) * 6, (Math.random() - 0.5) * 6);
     }
+  } else if (effect === 'heal') {
+    // ライフ回復（最大ライフを上限とする）
+    if (gameState.life < gameParams.playerMaxLife) {
+      gameState.life++;
+      updateLifeUI();
+    }
+    // 回復エフェクト（緑のキラキラ）
+    for (let i = 0; i < 15; i++) {
+      createParticle(player.x + player.width/2, player.y + player.height/2, '#10b981', (Math.random() - 0.5) * 5, (Math.random() - 0.5) * 5);
+    }
+  } else if (effect === 'clearTnt') {
+    // 画面内のすべてのTNTを消去
+    fallingObjects.forEach(obj => {
+      if (obj.type === 'tnt') {
+        for (let i = 0; i < 10; i++) {
+          createParticle(obj.x + obj.width/2, obj.y + obj.height/2, '#ff9800', (Math.random() - 0.5) * 6, (Math.random() - 0.5) * 6);
+        }
+        obj.reset();
+      }
+    });
   }
 }
 
@@ -683,19 +647,19 @@ async function runProgramCompileAnimation() {
   
   // ブロックからの数値取得
   const pSpeed = document.getElementById('param-player-speed').value;
-  const pJump = document.getElementById('param-player-jump').value;
   const pLife = document.getElementById('param-player-life').value;
   const tSpeed = document.getElementById('param-tnt-speed').value;
   const tFreq = document.getElementById('param-tnt-frequency').value;
   const dScore = document.getElementById('param-diamond-score').value;
+  const gScore = document.getElementById('param-gold-score').value;
   const spEffect = document.getElementById('param-special-effect').value;
 
   await addLogLine(`  - プレイヤーのスピード = ${pSpeed}`, 100);
-  await addLogLine(`  - プレイヤーのジャンプ力 = ${pJump}`, 100);
   await addLogLine(`  - プレイヤーのライフ = ${pLife}`, 100);
   await addLogLine(`  - TNTの落ちるスピード = ${tSpeed}`, 100);
   await addLogLine(`  - TNTの量 = "${tFreq}"`, 100);
   await addLogLine(`  - ダイヤの得点 = ${dScore}`, 100);
+  await addLogLine(`  - 金ブロックの得点 = ${gScore}`, 100);
   await addLogLine(`  - 特別な効果 = "${spEffect}"`, 100);
 
   await addLogLine('> ソースコードを生成中...', 200);
@@ -704,11 +668,11 @@ async function runProgramCompileAnimation() {
 
   // パラメータのゲーム反映
   gameParams.playerSpeed = Number(pSpeed);
-  gameParams.playerJump = Number(pJump);
   gameParams.playerMaxLife = Number(pLife);
   gameParams.tntSpeed = Number(tSpeed);
   gameParams.tntFrequency = tFreq;
   gameParams.diamondScore = Number(dScore);
+  gameParams.goldScore = Number(gScore);
   gameParams.specialEffect = spEffect;
 
   // 実行中なら、リアルタイムで反映するパラメータもある

@@ -239,7 +239,7 @@ body {
 /* タッチコントローラー */
 .touch-controls {
   display: grid;
-  grid-template-columns: 1fr 1.2fr 1fr;
+  grid-template-columns: 1fr 1fr;
   gap: 12px;
   margin-top: 16px;
 }

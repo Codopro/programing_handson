@@ -53,13 +53,12 @@
           <!-- スマホ・タブレット用タッチコントローラー -->
           <div class="touch-controls">
             <button id="btn-left" class="control-btn">◀ 左へ</button>
-            <button id="btn-jump" class="control-btn btn-jump-style">▲ ジャンプ</button>
             <button id="btn-right" class="control-btn">右へ ▶</button>
           </div>
           
           <div class="control-help">
-            <p>パソコン: <span>◀ ▶ キー</span> でうごく / <span>スペース</span> でジャンプ</p>
-            <p style="margin-top: 6px;">スマホ: <span>がめんを左右にスワイプ</span> してうごく / <span>ポンとたたく（タップ）</span> とジャンプ</p>
+            <p>パソコン: <span>◀ ▶ キー</span> でうごく</p>
+            <p style="margin-top: 6px;">スマホ: <span>がめんの左・右のはし</span> をタッチしてうごく</p>
           </div>
         </div>
       </section>
@@ -103,20 +102,7 @@
                 </div>
               </div>
 
-              <div class="scratch-block block-blue">
-                <div class="block-content">
-                  <div class="block-row">
-                    <span>じぶんの </span>
-                    <span class="block-keyword">ジャンプ力</span>
-                    <span> を </span>
-                    <div class="input-wrapper">
-                      <input type="number" id="param-player-jump" min="0" max="15" value="0">
-                    </div>
-                    <span> にする</span>
-                  </div>
-                  <div class="block-hint">⚠️ 高く ジャンプするほど 空中で うごけないよ！</div>
-                </div>
-              </div>
+
 
               <div class="scratch-block block-blue">
                 <div class="block-content">
@@ -186,6 +172,21 @@
                   <div class="block-hint">⚠️ とくてんを 高くすると ダイヤが 重くなって速くおちるよ！</div>
                 </div>
               </div>
+
+              <div class="scratch-block block-green">
+                <div class="block-content">
+                  <div class="block-row">
+                    <span>金ブロック をとったときの </span>
+                    <span class="block-keyword">とくてん</span>
+                    <span> を </span>
+                    <div class="input-wrapper">
+                      <input type="number" id="param-gold-score" min="1" max="100" value="1">
+                    </div>
+                    <span> 点にする</span>
+                  </div>
+                  <div class="block-hint">⚠️ とくてんを 高くすると 金ブロックが 重くなって速くおちるよ！</div>
+                </div>
+              </div>
             </div>
             
             <div class="block-connector"></div>
@@ -202,6 +203,8 @@
                       <option value="none" selected>なにもなし</option>
                       <option value="shield">むてき(3びょう)</option>
                       <option value="speedup">スピードが2ばい</option>
+                      <option value="heal">ライフを1かいふく</option>
+                      <option value="clearTnt">TNTをぜんぶ消す</option>
                     </select>
                   </div>
                   <span> にする</span>
