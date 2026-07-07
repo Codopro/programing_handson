@@ -29,6 +29,7 @@ let gameState = {
   isPlaying: false,
   shieldTimer: 0,       // 無敵タイマー（フレーム数）
   speedupTimer: 0,      // スピードアップタイマー（フレーム数）
+  tntSpawnDelay: 0,     // TNT出現ディレイ（フレーム数）
   particles: []         // パーティクル配列
 };
 
@@ -64,6 +65,7 @@ class Agent {
     // 状態タイマーの更新
     if (gameState.shieldTimer > 0) gameState.shieldTimer--;
     if (gameState.speedupTimer > 0) gameState.speedupTimer--;
+    if (gameState.tntSpawnDelay > 0) gameState.tntSpawnDelay--;
 
     // 速度の設定 (スピードアップ効果があれば2倍)
     let targetSpeed = gameParams.playerSpeed;
@@ -191,6 +193,12 @@ class FallingObject {
   }
 
   update() {
+    // TNTかつ生成ディレイ中の場合は画面外（上部）で待機
+    if (this.type === 'tnt' && gameState.tntSpawnDelay > 0) {
+      this.y = -this.height - 50;
+      return;
+    }
+
     this.y += this.speed;
     this.rotation += this.rotSpeed;
     
@@ -549,6 +557,8 @@ function applySpecialEffect() {
       createParticle(player.x + player.width/2, player.y + player.height/2, '#10b981', (Math.random() - 0.5) * 5, (Math.random() - 0.5) * 5);
     }
   } else if (effect === 'clearTnt') {
+    // 1秒間（60フレーム）TNTの生成を停止
+    gameState.tntSpawnDelay = 60;
     // 画面内のすべてのTNTを消去
     fallingObjects.forEach(obj => {
       if (obj.type === 'tnt') {
@@ -602,6 +612,7 @@ function initGame() {
   gameState.isPlaying = true;
   gameState.shieldTimer = 0;
   gameState.speedupTimer = 0;
+  gameState.tntSpawnDelay = 0;
   gameState.particles = [];
 
   scoreVal.textContent = '0';
