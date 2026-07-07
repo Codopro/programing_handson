@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>こどぷろゲームクリエイター - ゲームをかいぞうしよう！</title>
+  <!-- Google Fonts から低学年向けの読みやすい丸ゴシックをインポート -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@400;700;800&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="app-container">
+    <header class="app-header">
+      <div class="header-logo">こどプロ</div>
+      <h1 class="header-title">ゲーム改造（かいぞう）マシン</h1>
+      <div class="header-subtitle">〜 ゲームのうらがわを書きかえよう！ 〜</div>
+    </header>
+
+    <main class="app-main">
+      <!-- 左側：ゲームエリア -->
+      <section class="game-section">
+        <div class="game-card">
+          <div class="game-status">
+            <div class="status-item">
+              <span class="status-label">スコア:</span>
+              <span id="score-val" class="status-value">0</span>
+            </div>
+            <div class="status-item">
+              <span class="status-label">ライフ:</span>
+              <span id="life-container" class="status-value">❤</span>
+            </div>
+            <div class="status-item">
+              <span class="status-label">ハイスコア:</span>
+              <span id="highscore-val" class="status-value">0</span>
+            </div>
+          </div>
+          
+          <div class="canvas-container">
+            <canvas id="game-canvas" width="480" height="360"></canvas>
+            
+            <!-- ゲーム開始・ゲームオーバー画面のオーバーレイ -->
+            <div id="game-overlay" class="game-overlay show">
+              <div class="overlay-content">
+                <h2 id="overlay-title">ダイヤモンド・ダッシュ</h2>
+                <p id="overlay-desc">TNTをよけながら、ダイヤモンドをあつめよう！<br>いまは難しすぎてクリアできないかも...？</p>
+                <button id="start-btn" class="btn btn-primary">ゲームスタート</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- スマホ・タブレット用タッチコントローラー -->
+          <div class="touch-controls">
+            <button id="btn-left" class="control-btn">◀ 左へ</button>
+            <button id="btn-jump" class="control-btn btn-jump-style">▲ ジャンプ</button>
+            <button id="btn-right" class="control-btn">右へ ▶</button>
+          </div>
+          
+          <div class="control-help">
+            <p>パソコンの操作: <span>◀ ▶ キー</span> でうごく / <span>スペースキー</span> でジャンプ</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- 右側：プログラミングブロックエリア -->
+      <section class="code-section">
+        <div class="code-card">
+          <div class="code-card-header">
+            <h2>プログラムを かきかえよう！</h2>
+            <p>ブロックの数字（すうじ）や言葉（ことば）をかえて、ゲームを改造しよう！</p>
+          </div>
+
+          <div class="blocks-workspace">
+            <!-- スタートイベントブロック -->
+            <div class="scratch-block block-hat">
+              <div class="block-content">
+                <span class="block-icon">🏁</span>
+                <span>ゲームが はじまった とき</span>
+              </div>
+            </div>
+
+            <!-- ブロックの接続ラインを模した縦線 -->
+            <div class="block-connector"></div>
+
+            <!-- プレイヤー設定カテゴリ -->
+            <div class="block-group group-player">
+              <div class="group-label">じぶんの設定（せってい）</div>
+              
+              <div class="scratch-block block-blue">
+                <div class="block-content">
+                  <div class="block-row">
+                    <span>じぶんの </span>
+                    <span class="block-keyword">スピード</span>
+                    <span> を </span>
+                    <div class="input-wrapper">
+                      <input type="number" id="param-player-speed" min="1" max="10" value="3">
+                    </div>
+                    <span> にする</span>
+                  </div>
+                  <div class="block-hint">⚠️ スピードを あげすぎると すべるよ！</div>
+                </div>
+              </div>
+
+              <div class="scratch-block block-blue">
+                <div class="block-content">
+                  <div class="block-row">
+                    <span>じぶんの </span>
+                    <span class="block-keyword">ジャンプ力</span>
+                    <span> を </span>
+                    <div class="input-wrapper">
+                      <input type="number" id="param-player-jump" min="0" max="15" value="0">
+                    </div>
+                    <span> にする</span>
+                  </div>
+                  <div class="block-hint">⚠️ 高く ジャンプするほど 空中で うごけないよ！</div>
+                </div>
+              </div>
+
+              <div class="scratch-block block-blue">
+                <div class="block-content">
+                  <div class="block-row">
+                    <span>じぶんの </span>
+                    <span class="block-keyword">ライフ</span>
+                    <span> を </span>
+                    <div class="input-wrapper">
+                      <input type="number" id="param-player-life" min="1" max="5" value="1">
+                    </div>
+                    <span> にする</span>
+                  </div>
+                  <div class="block-hint">⚠️ ライフを ふやすと 体が 大きくなるよ！</div>
+                </div>
+              </div>
+            </div>
+
+            <div class="block-connector"></div>
+
+            <!-- 障害物・アイテム設定カテゴリ -->
+            <div class="block-group group-rules">
+              <div class="group-label">てき・アイテムの設定（せってい）</div>
+
+              <div class="scratch-block block-orange">
+                <div class="block-content">
+                  <div class="block-row">
+                    <span>てき(TNT) の </span>
+                    <span class="block-keyword">おちるスピード</span>
+                    <span> を </span>
+                    <div class="input-wrapper">
+                      <input type="number" id="param-tnt-speed" min="1" max="10" value="6">
+                    </div>
+                    <span> にする</span>
+                  </div>
+                </div>
+              </div>
+
+              <div class="scratch-block block-orange">
+                <div class="block-content">
+                  <div class="block-row">
+                    <span>てき(TNT) の </span>
+                    <span class="block-keyword">でてくる量</span>
+                    <span> を </span>
+                    <div class="select-wrapper">
+                      <select id="param-tnt-frequency">
+                        <option value="high" selected>おおい</option>
+                        <option value="normal">ふつう</option>
+                        <option value="low">すくない</option>
+                      </select>
+                    </div>
+                    <span> にする</span>
+                  </div>
+                </div>
+              </div>
+
+              <div class="scratch-block block-green">
+                <div class="block-content">
+                  <div class="block-row">
+                    <span>ダイヤ をとったときの </span>
+                    <span class="block-keyword">とくてん</span>
+                    <span> を </span>
+                    <div class="input-wrapper">
+                      <input type="number" id="param-diamond-score" min="1" max="100" value="5">
+                    </div>
+                    <span> 点にする</span>
+                  </div>
+                  <div class="block-hint">⚠️ とくてんを 高くすると ダイヤが 重くなって速くおちるよ！</div>
+                </div>
+              </div>
+            </div>
+            
+            <div class="block-connector"></div>
+            
+            <!-- 特別なルールカテゴリ -->
+            <div class="block-group group-special">
+              <div class="group-label">とくべつなルール</div>
+              
+              <div class="scratch-block block-purple">
+                <div class="block-content">
+                  <span>ダイヤ をとったら </span>
+                  <div class="select-wrapper">
+                    <select id="param-special-effect">
+                      <option value="none" selected>なにもなし</option>
+                      <option value="shield">むてき(3びょう)</option>
+                      <option value="speedup">スピードが2ばい</option>
+                    </select>
+                  </div>
+                  <span> にする</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="code-action">
+            <button id="run-code-btn" class="btn btn-success">
+              <span class="btn-icon">⚡</span> プログラムを実行（じっこう）する！
+            </button>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <!-- プログラム実行時のサイバーロード画面 -->
+    <div id="compiler-overlay" class="compiler-overlay">
+      <div class="compiler-box">
+        <div class="cyber-spinner"></div>
+        <div class="compiler-title">PROGRAM COMPILING...</div>
+        <div class="compiler-console" id="compiler-console">
+          <!-- JSでログを出力する -->
+        </div>
+        <div class="compiler-status">パラメータの書きかえ 完了！</div>
+      </div>
+    </div>
+
+    <footer class="app-footer">
+      <p>&copy; こどものプログラミング教室 こどプロ</p>
+    </footer>
+  </div>
+
+  <script src="game.js"></script>
+</body>
+</html>

@@ -1,0 +1,665 @@
+/* ==========================================================================
+   こどぷろゲームクリエイター - スタイルシート
+   ========================================================================== */
+
+/* 変数定義（デザインシステム） */
+:root {
+  --font-main: 'M PLUS Rounded 1c', sans-serif;
+  --font-mono: 'Share Tech Mono', monospace;
+
+  /* カラーパレット */
+  --bg-app: #0f111a;          /* Sleek dark background */
+  --bg-card: #1a1d2e;         /* Slate blue card bg */
+  --text-main: #f0f4f8;
+  --text-muted: #a0aec0;
+  
+  /* ボタンとアクセント */
+  --color-primary: #3b82f6;   /* Royal Blue */
+  --color-success: #10b981;   /* Emerald Green */
+  --color-danger: #ef4444;    /* Crimson Red */
+  --color-warning: #f59e0b;   /* Amber Gold */
+  
+  /* Scratch風ブロックの配色 */
+  --block-blue: #4c97ff;      /* 動き / プレイヤー設定 */
+  --block-orange: #ffab19;    /* 制御 / ルール設定 */
+  --block-green: #40bf50;     /* 演算 / 得点設定 */
+  --block-purple: #9966ff;    /* 見た目 / 特殊効果 */
+  --block-hat: #ff6680;       /* イベント開始 */
+  
+  /* グラデーション */
+  --grad-primary: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%);
+  --grad-success: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  --grad-cyber: linear-gradient(90deg, #00f0ff, #ff007f);
+  
+  /* シャドウと丸み */
+  --shadow-lg: 0 10px 25px -5px rgba(0, 0, 0, 0.5), 0 8px 10px -6px rgba(0, 0, 0, 0.5);
+  --shadow-neon: 0 0 15px rgba(0, 240, 255, 0.3);
+  --radius-lg: 16px;
+  --radius-md: 8px;
+}
+
+/* 全体設定 */
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: var(--font-main);
+  background-color: var(--bg-app);
+  color: var(--text-main);
+  line-height: 1.6;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* アプリコンテナ */
+.app-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 20px;
+  width: 100%;
+  flex-grow: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ヘッダー */
+.app-header {
+  text-align: center;
+  margin-bottom: 25px;
+  position: relative;
+  padding-bottom: 15px;
+  border-bottom: 2px solid rgba(255, 255, 255, 0.05);
+}
+
+.header-logo {
+  display: inline-block;
+  background: var(--grad-primary);
+  color: white;
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-weight: 800;
+  font-size: 0.9rem;
+  margin-bottom: 8px;
+  letter-spacing: 0.05em;
+  box-shadow: 0 4px 10px rgba(59, 130, 246, 0.3);
+}
+
+.header-title {
+  font-size: 2.2rem;
+  font-weight: 800;
+  background: linear-gradient(to right, #ffffff, #93c5fd);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  margin-bottom: 4px;
+}
+
+.header-subtitle {
+  font-size: 1rem;
+  color: var(--text-muted);
+  font-weight: 500;
+}
+
+/* メインレイアウト */
+.app-main {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+  align-items: start;
+  flex-grow: 1;
+}
+
+@media (max-width: 900px) {
+  .app-main {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* カードの共通スタイル */
+.game-card, .code-card {
+  background-color: var(--bg-card);
+  border-radius: var(--radius-lg);
+  padding: 24px;
+  box-shadow: var(--shadow-lg);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.game-card:hover, .code-card:hover {
+  border-color: rgba(0, 240, 255, 0.2);
+}
+
+/* ==========================================================================
+   左側：ゲームセクション
+   ========================================================================== */
+
+/* ステータス表示 */
+.game-status {
+  display: flex;
+  justify-content: space-between;
+  background-color: rgba(0, 0, 0, 0.2);
+  padding: 12px 18px;
+  border-radius: var(--radius-md);
+  margin-bottom: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.status-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.status-label {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  font-weight: 700;
+}
+
+.status-value {
+  font-size: 1.4rem;
+  font-weight: 800;
+  color: #fff;
+  text-shadow: 0 0 8px rgba(255, 255, 255, 0.2);
+}
+
+#life-container {
+  color: var(--color-danger);
+  letter-spacing: 2px;
+}
+
+/* Canvas コンテナ */
+.canvas-container {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  background-color: #000;
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  box-shadow: inset 0 0 20px rgba(0, 0, 0, 0.8);
+  border: 3px solid #2e3440;
+}
+
+#game-canvas {
+  width: 100%;
+  height: 100%;
+  display: block;
+  image-rendering: pixelated; /* レトロなドット感を維持 */
+}
+
+/* ゲームオーバーレイ */
+.game-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(15, 17, 26, 0.9);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.3s ease;
+  z-index: 10;
+}
+
+.game-overlay.show {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.overlay-content {
+  text-align: center;
+  padding: 20px;
+  max-width: 380px;
+}
+
+.overlay-content h2 {
+  font-size: 1.8rem;
+  font-weight: 800;
+  margin-bottom: 12px;
+  background: var(--grad-cyber);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.overlay-content p {
+  font-size: 0.95rem;
+  color: var(--text-muted);
+  margin-bottom: 24px;
+}
+
+/* タッチコントローラー */
+.touch-controls {
+  display: grid;
+  grid-template-columns: 1fr 1.2fr 1fr;
+  gap: 12px;
+  margin-top: 16px;
+}
+
+.control-btn {
+  background-color: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #fff;
+  padding: 14px;
+  border-radius: var(--radius-md);
+  font-size: 1rem;
+  font-weight: 700;
+  font-family: var(--font-main);
+  cursor: pointer;
+  user-select: none;
+  transition: all 0.1s ease;
+  outline: none;
+  box-shadow: 0 4px 6px rgba(0,0,0,0.2);
+}
+
+.control-btn:active {
+  background-color: var(--color-primary);
+  border-color: var(--color-primary);
+  transform: translateY(2px);
+  box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+}
+
+.btn-jump-style {
+  background: var(--grad-primary);
+  border: none;
+  font-size: 1.1rem;
+}
+
+.btn-jump-style:active {
+  background: #2563eb;
+}
+
+/* 操作説明 */
+.control-help {
+  margin-top: 16px;
+  text-align: center;
+  font-size: 0.85rem;
+  color: var(--text-muted);
+}
+
+.control-help span {
+  background-color: rgba(255, 255, 255, 0.1);
+  padding: 2px 6px;
+  border-radius: 4px;
+  color: #fff;
+  font-family: inherit;
+}
+
+/* ==========================================================================
+   右側：プログラミングブロックセクション
+   ========================================================================== */
+
+.code-card-header {
+  margin-bottom: 20px;
+}
+
+.code-card-header h2 {
+  font-size: 1.4rem;
+  font-weight: 800;
+  margin-bottom: 4px;
+  color: #fff;
+}
+
+.code-card-header p {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+}
+
+/* ワークスペース */
+.blocks-workspace {
+  background-color: rgba(0, 0, 0, 0.15);
+  border-radius: var(--radius-md);
+  padding: 20px;
+  flex-grow: 1;
+  border: 1px solid rgba(255, 255, 255, 0.03);
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  min-height: 380px;
+  overflow-y: auto;
+}
+
+.block-group {
+  width: 100%;
+  background-color: rgba(255, 255, 255, 0.02);
+  border: 1px dashed rgba(255, 255, 255, 0.1);
+  border-radius: var(--radius-md);
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.group-label {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  font-weight: 700;
+  margin-bottom: 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+/* ブロックコネクタ（縦線） */
+.block-connector {
+  width: 16px;
+  height: 12px;
+  background-color: rgba(255, 255, 255, 0.1);
+  margin-left: 24px;
+  position: relative;
+}
+
+.block-connector::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 4px;
+  width: 8px;
+  height: 100%;
+  background-color: rgba(255,255,255,0.05);
+}
+
+/* Scratchブロック基本 */
+.scratch-block {
+  border-radius: var(--radius-md);
+  padding: 10px 16px;
+  color: white;
+  font-weight: 700;
+  font-size: 0.9rem;
+  display: flex;
+  align-items: center;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.15), inset 0 2px 0 rgba(255, 255, 255, 0.2);
+  position: relative;
+  user-select: none;
+  min-height: 48px;
+  width: 100%;
+}
+
+.block-content {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  width: 100%;
+}
+
+.block-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  width: 100%;
+}
+
+.block-hint {
+  font-size: 0.72rem;
+  color: rgba(255, 255, 255, 0.85);
+  font-weight: 500;
+  margin-top: 2px;
+  padding-left: 2px;
+  letter-spacing: 0.02em;
+}
+
+.block-keyword {
+  background-color: rgba(0, 0, 0, 0.15);
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-weight: 800;
+}
+
+.block-icon {
+  margin-right: 6px;
+  font-size: 1.1rem;
+}
+
+/* カテゴリごとの色 */
+.block-hat {
+  background-color: var(--block-hat);
+  border-bottom-left-radius: 4px;
+  border-bottom-right-radius: 4px;
+  border-top-left-radius: 20px;
+  border-top-right-radius: 20px;
+}
+
+.block-blue {
+  background-color: var(--block-blue);
+}
+
+.block-orange {
+  background-color: var(--block-orange);
+}
+
+.block-green {
+  background-color: var(--block-green);
+}
+
+.block-purple {
+  background-color: var(--block-purple);
+}
+
+/* Scratch風の凹凸接続部分の擬似要素（オプション - 視覚的リッチさのため） */
+.scratch-block::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 20px;
+  width: 16px;
+  height: 6px;
+  background-color: rgba(0, 0, 0, 0.15);
+  border-bottom-left-radius: 4px;
+  border-bottom-right-radius: 4px;
+}
+
+/* 入力ラッパーとコントロール */
+.input-wrapper, .select-wrapper {
+  display: inline-block;
+  background-color: white;
+  border-radius: 20px;
+  padding: 2px 8px;
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.15);
+}
+
+.input-wrapper input {
+  width: 50px;
+  border: none;
+  background: transparent;
+  text-align: center;
+  font-family: var(--font-main);
+  font-weight: 800;
+  font-size: 0.95rem;
+  color: #333;
+  outline: none;
+}
+
+/* 数値選択用スピンボタン（上下矢印）を消す（スマホ用） */
+.input-wrapper input::-webkit-outer-spin-button,
+.input-wrapper input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.select-wrapper select {
+  border: none;
+  background: transparent;
+  font-family: var(--font-main);
+  font-weight: 800;
+  font-size: 0.9rem;
+  color: #333;
+  outline: none;
+  padding-right: 4px;
+  cursor: pointer;
+}
+
+/* 実行ボタンセクション */
+.code-action {
+  margin-top: 20px;
+  text-align: center;
+}
+
+/* ボタン共通 */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 14px 28px;
+  border-radius: 30px;
+  font-size: 1.1rem;
+  font-weight: 800;
+  font-family: var(--font-main);
+  cursor: pointer;
+  border: none;
+  outline: none;
+  transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+}
+
+.btn-primary {
+  background: var(--grad-primary);
+  color: white;
+}
+
+.btn-primary:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 25px rgba(59, 130, 246, 0.4);
+}
+
+.btn-success {
+  background: var(--grad-success);
+  color: white;
+  width: 100%;
+}
+
+.btn-success:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 25px rgba(16, 185, 129, 0.4);
+}
+
+.btn:active {
+  transform: translateY(1px);
+}
+
+.btn-icon {
+  margin-right: 8px;
+  font-size: 1.2rem;
+}
+
+/* ==========================================================================
+   コンパイラオーバーレイ（実行中アニメーション）
+   ========================================================================== */
+
+.compiler-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(10, 12, 22, 0.95);
+  z-index: 9999;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.4s cubic-bezier(0.19, 1, 0.22, 1);
+}
+
+.compiler-overlay.show {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.compiler-box {
+  background-color: #121625;
+  border: 2px solid #00f0ff;
+  border-radius: var(--radius-lg);
+  padding: 30px;
+  width: 90%;
+  max-width: 500px;
+  box-shadow: 0 0 30px rgba(0, 240, 255, 0.2);
+  text-align: center;
+  transform: scale(0.9);
+  transition: transform 0.4s cubic-bezier(0.19, 1, 0.22, 1);
+}
+
+.compiler-overlay.show .compiler-box {
+  transform: scale(1);
+}
+
+.cyber-spinner {
+  width: 60px;
+  height: 60px;
+  border: 4px solid rgba(0, 240, 255, 0.1);
+  border-left-color: #00f0ff;
+  border-radius: 50%;
+  margin: 0 auto 20px;
+  animation: spin 1s linear infinite;
+  box-shadow: var(--shadow-neon);
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.compiler-title {
+  font-family: var(--font-mono);
+  font-size: 1.2rem;
+  color: #00f0ff;
+  letter-spacing: 0.1em;
+  margin-bottom: 15px;
+  text-shadow: 0 0 10px rgba(0, 240, 255, 0.5);
+}
+
+.compiler-console {
+  background-color: #070913;
+  border: 1px solid rgba(255,255,255,0.05);
+  border-radius: var(--radius-md);
+  padding: 15px;
+  height: 140px;
+  overflow-y: auto;
+  font-family: var(--font-mono);
+  font-size: 0.85rem;
+  color: #39ff14; /* Cyber Matrix Green */
+  text-align: left;
+  margin-bottom: 15px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.compiler-console p {
+  margin: 0;
+  word-break: break-all;
+}
+
+.compiler-status {
+  font-size: 1rem;
+  color: #fff;
+  font-weight: 700;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.compiler-overlay.success .compiler-status {
+  opacity: 1;
+}
+
+/* ==========================================================================
+   フッター
+   ========================================================================== */
+
+.app-footer {
+  text-align: center;
+  padding: 20px 0;
+  margin-top: 30px;
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+}
