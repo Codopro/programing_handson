@@ -16,6 +16,7 @@ let gameParams = {
   tntSpeed: 6,
   tntFrequency: 'high', // 'high', 'normal', 'low'
   diamondScore: 5,
+  diamondFrequency: 'low', // 'high', 'normal', 'low'
   goldScore: 1,
   specialEffect: 'none' // 'none', 'shield', 'speedup', 'heal', 'clearTnt'
 };
@@ -193,9 +194,9 @@ class FallingObject {
   }
 
   update() {
-    // TNTかつ生成ディレイ中の場合は画面外（上部）で待機
+    // TNTかつ生成ディレイ中の場合は、現在の位置（画面外上部）で落下を一時停止する
     if (this.type === 'tnt' && gameState.tntSpawnDelay > 0) {
-      this.y = -this.height - 50;
+      this.rotation += this.rotSpeed; // 回転だけはさせておく
       return;
     }
 
@@ -212,8 +213,14 @@ class FallingObject {
     if (this.type === 'tnt') {
       this.speed = gameParams.tntSpeed + (Math.random() - 0.5) * 2;
     } else if (this.type === 'diamond') {
-      // 得点が高くなるほど、ダイヤが重くなり落下が加速する
-      this.speed = 3 + (gameParams.diamondScore * 0.09); // 得点100のとき秒速12ピクセル（超高速）
+      // 出現量に応じた指数関数的な速度倍率 (low: 1.0倍, normal: 1.8倍, high: 3.24倍)
+      let freqVal = 0;
+      if (gameParams.diamondFrequency === 'normal') freqVal = 1;
+      if (gameParams.diamondFrequency === 'high') freqVal = 2;
+      let multiplier = Math.pow(1.8, freqVal);
+
+      // 得点が高くなるほど、ダイヤが重くなり落下が加速する（出現量の倍率も掛かる）
+      this.speed = (3 + (gameParams.diamondScore * 0.09)) * multiplier;
     } else {
       // 金鉱石も得点が高くなるほど、重くなり落下が加速する
       this.speed = 3 + (gameParams.goldScore * 0.09);
@@ -349,8 +356,18 @@ function setupFallingObjects() {
     fallingObjects.push(new FallingObject('tnt'));
   }
 
-  // ダイヤモンドと金鉱石を追加（固定数）
-  fallingObjects.push(new FallingObject('diamond'));
+  // ダイヤモンドの個数（頻度）設定
+  let diamondCount = 1;
+  if (gameParams.diamondFrequency === 'high') diamondCount = 3;
+  if (gameParams.diamondFrequency === 'normal') diamondCount = 2;
+  if (gameParams.diamondFrequency === 'low') diamondCount = 1;
+
+  // ダイヤモンドを追加
+  for (let i = 0; i < diamondCount; i++) {
+    fallingObjects.push(new FallingObject('diamond'));
+  }
+
+  // 金鉱石を追加（固定数）
   fallingObjects.push(new FallingObject('gold'));
   fallingObjects.push(new FallingObject('gold'));
 }
@@ -557,7 +574,7 @@ function applySpecialEffect() {
       createParticle(player.x + player.width/2, player.y + player.height/2, '#10b981', (Math.random() - 0.5) * 5, (Math.random() - 0.5) * 5);
     }
   } else if (effect === 'clearTnt') {
-    // 1秒間（60フレーム）TNTの生成を停止
+    // 1秒間（60フレーム）TNTの出現（落下）を完全に停止して安全時間を確保
     gameState.tntSpawnDelay = 60;
     // 画面内のすべてのTNTを消去
     fallingObjects.forEach(obj => {
@@ -665,10 +682,11 @@ async function runProgramCompileAnimation() {
     const tSpeedEl = document.getElementById('param-tnt-speed');
     const tFreqEl = document.getElementById('param-tnt-frequency');
     const dScoreEl = document.getElementById('param-diamond-score');
+    const dFreqEl = document.getElementById('param-diamond-frequency');
     const gScoreEl = document.getElementById('param-gold-score');
     const spEffectEl = document.getElementById('param-special-effect');
 
-    if (!pSpeedEl || !pLifeEl || !tSpeedEl || !tFreqEl || !dScoreEl || !gScoreEl || !spEffectEl) {
+    if (!pSpeedEl || !pLifeEl || !tSpeedEl || !tFreqEl || !dScoreEl || !dFreqEl || !gScoreEl || !spEffectEl) {
       throw new Error('設定ブロックの要素が見つかりません。');
     }
 
@@ -677,6 +695,7 @@ async function runProgramCompileAnimation() {
     const tSpeed = tSpeedEl.value;
     const tFreq = tFreqEl.value;
     const dScore = dScoreEl.value;
+    const dFreq = dFreqEl.value;
     const gScore = gScoreEl.value;
     const spEffect = spEffectEl.value;
 
@@ -685,6 +704,7 @@ async function runProgramCompileAnimation() {
     await addLogLine(`  - TNTの落ちるスピード = ${tSpeed}`, 100);
     await addLogLine(`  - TNTの量 = "${tFreq}"`, 100);
     await addLogLine(`  - ダイヤの得点 = ${dScore}`, 100);
+    await addLogLine(`  - ダイヤの量 = "${dFreq}"`, 100);
     await addLogLine(`  - 金ブロックの得点 = ${gScore}`, 100);
     await addLogLine(`  - 特別な効果 = "${spEffect}"`, 100);
 
@@ -698,6 +718,7 @@ async function runProgramCompileAnimation() {
     gameParams.tntSpeed = Number(tSpeed);
     gameParams.tntFrequency = tFreq;
     gameParams.diamondScore = Number(dScore);
+    gameParams.diamondFrequency = dFreq;
     gameParams.goldScore = Number(gScore);
     gameParams.specialEffect = spEffect;
 
