@@ -564,7 +564,9 @@ function applySpecialEffect() {
 // ライフUIの更新
 function updateLifeUI() {
   let hearts = '';
-  for (let i = 0; i < gameState.life; i++) {
+  // ライフ値が異常に巨大になるケースや Infinity に対処するため、上限を100個に制限する安全設計
+  const maxHearts = Math.min(Math.max(0, Number(gameState.life) || 0), 100);
+  for (let i = 0; i < maxHearts; i++) {
     hearts += '❤';
   }
   // ライフが空なら
@@ -642,56 +644,74 @@ async function runProgramCompileAnimation() {
   compilerOverlay.classList.remove('success');
   compilerOverlay.classList.add('show');
 
-  await addLogLine('> モジュールを読みこみ中...', 100);
-  await addLogLine('> ブロックから パラメータを取得中...', 200);
-  
-  // ブロックからの数値取得
-  const pSpeed = document.getElementById('param-player-speed').value;
-  const pLife = document.getElementById('param-player-life').value;
-  const tSpeed = document.getElementById('param-tnt-speed').value;
-  const tFreq = document.getElementById('param-tnt-frequency').value;
-  const dScore = document.getElementById('param-diamond-score').value;
-  const gScore = document.getElementById('param-gold-score').value;
-  const spEffect = document.getElementById('param-special-effect').value;
+  try {
+    await addLogLine('> モジュールを読みこみ中...', 100);
+    await addLogLine('> ブロックから パラメータを取得中...', 200);
+    
+    // ブロックからの数値取得
+    const pSpeedEl = document.getElementById('param-player-speed');
+    const pLifeEl = document.getElementById('param-player-life');
+    const tSpeedEl = document.getElementById('param-tnt-speed');
+    const tFreqEl = document.getElementById('param-tnt-frequency');
+    const dScoreEl = document.getElementById('param-diamond-score');
+    const gScoreEl = document.getElementById('param-gold-score');
+    const spEffectEl = document.getElementById('param-special-effect');
 
-  await addLogLine(`  - プレイヤーのスピード = ${pSpeed}`, 100);
-  await addLogLine(`  - プレイヤーのライフ = ${pLife}`, 100);
-  await addLogLine(`  - TNTの落ちるスピード = ${tSpeed}`, 100);
-  await addLogLine(`  - TNTの量 = "${tFreq}"`, 100);
-  await addLogLine(`  - ダイヤの得点 = ${dScore}`, 100);
-  await addLogLine(`  - 金ブロックの得点 = ${gScore}`, 100);
-  await addLogLine(`  - 特別な効果 = "${spEffect}"`, 100);
-
-  await addLogLine('> ソースコードを生成中...', 200);
-  await addLogLine('> ゲームエンジンへ コードを適用中...', 300);
-  await addLogLine('> コンパイル 成功！', 200);
-
-  // パラメータのゲーム反映
-  gameParams.playerSpeed = Number(pSpeed);
-  gameParams.playerMaxLife = Number(pLife);
-  gameParams.tntSpeed = Number(tSpeed);
-  gameParams.tntFrequency = tFreq;
-  gameParams.diamondScore = Number(dScore);
-  gameParams.goldScore = Number(gScore);
-  gameParams.specialEffect = spEffect;
-
-  // 実行中なら、リアルタイムで反映するパラメータもある
-  if (gameState.isPlaying && !gameState.isGameOver) {
-    // ライフは現在ライフより最大ライフが増えた場合、増やす
-    if (gameState.life < gameParams.playerMaxLife) {
-      gameState.life = gameParams.playerMaxLife;
-      updateLifeUI();
+    if (!pSpeedEl || !pLifeEl || !tSpeedEl || !tFreqEl || !dScoreEl || !gScoreEl || !spEffectEl) {
+      throw new Error('設定ブロックの要素が見つかりません。');
     }
-    // 落下物を再設定
-    setupFallingObjects();
+
+    const pSpeed = pSpeedEl.value;
+    const pLife = pLifeEl.value;
+    const tSpeed = tSpeedEl.value;
+    const tFreq = tFreqEl.value;
+    const dScore = dScoreEl.value;
+    const gScore = gScoreEl.value;
+    const spEffect = spEffectEl.value;
+
+    await addLogLine(`  - プレイヤーのスピード = ${pSpeed}`, 100);
+    await addLogLine(`  - プレイヤーのライフ = ${pLife}`, 100);
+    await addLogLine(`  - TNTの落ちるスピード = ${tSpeed}`, 100);
+    await addLogLine(`  - TNTの量 = "${tFreq}"`, 100);
+    await addLogLine(`  - ダイヤの得点 = ${dScore}`, 100);
+    await addLogLine(`  - 金ブロックの得点 = ${gScore}`, 100);
+    await addLogLine(`  - 特別な効果 = "${spEffect}"`, 100);
+
+    await addLogLine('> ソースコードを生成中...', 200);
+    await addLogLine('> ゲームエンジンへ コードを適用中...', 300);
+    await addLogLine('> コンパイル 成功！', 200);
+
+    // パラメータのゲーム反映
+    gameParams.playerSpeed = Number(pSpeed);
+    gameParams.playerMaxLife = Number(pLife);
+    gameParams.tntSpeed = Number(tSpeed);
+    gameParams.tntFrequency = tFreq;
+    gameParams.diamondScore = Number(dScore);
+    gameParams.goldScore = Number(gScore);
+    gameParams.specialEffect = spEffect;
+
+    // 実行中なら、リアルタイムで反映するパラメータもある
+    if (gameState.isPlaying && !gameState.isGameOver) {
+      // ライフは現在ライフより最大ライフが増えた場合、増やす
+      if (gameState.life < gameParams.playerMaxLife) {
+        gameState.life = gameParams.playerMaxLife;
+        updateLifeUI();
+      }
+      // 落下物を再設定
+      setupFallingObjects();
+    }
+
+    compilerOverlay.classList.add('success');
+  } catch (error) {
+    console.error(error);
+    await addLogLine(`> [エラー] ${error.message}`, 100);
+    await addLogLine('> コンパイルに失敗しました。', 100);
+  } finally {
+    // 1.5秒後にオーバーレイを確実に隠す
+    setTimeout(() => {
+      compilerOverlay.classList.remove('show');
+    }, 1500);
   }
-
-  compilerOverlay.classList.add('success');
-
-  // 1秒後にオーバーレイを隠す
-  setTimeout(() => {
-    compilerOverlay.classList.remove('show');
-  }, 1000);
 }
 
 runCodeBtn.addEventListener('click', runProgramCompileAnimation);
